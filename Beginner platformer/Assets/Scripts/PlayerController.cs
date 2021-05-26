@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.SceneManagement;
 
 public class PlayerController : MonoBehaviour
 {
@@ -17,20 +18,21 @@ public class PlayerController : MonoBehaviour
 
 
     [SerializeField] private LayerMask ground;
-    [SerializeField] private float speed = 5f;
-    [SerializeField] private float jumpForce = 10f;
-    [SerializeField] private int cherries = 0;
-    [SerializeField] private TextMeshProUGUI cherryText;
+    [SerializeField] private float speed = 10f;
+    [SerializeField] private float jumpForce = 35f;
+
     [SerializeField] private float hurtForce = 10f;
     [SerializeField] private AudioSource cherry;
     [SerializeField] private AudioSource footstep;
+
+
 
     private void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
         coll = GetComponent<Collider2D>();
-        
+        PermanentUI.perm.healthAmount.text = PermanentUI.perm.health.ToString();
 
     }
 
@@ -52,11 +54,18 @@ public class PlayerController : MonoBehaviour
         {
             cherry.Play();
             Destroy(collision.gameObject);
-            cherries += 1;
-            cherryText.text = cherries.ToString();
+            PermanentUI.perm.cherries += 1;
+            PermanentUI.perm.cherryText.text = PermanentUI.perm.cherries.ToString();
+        }
+        if(collision.tag == "Powerup")
+        {
+            Destroy(collision.gameObject);
+            jumpForce = 45f;
+            GetComponent<SpriteRenderer>().color = Color.yellow;
+            StartCoroutine(ResetPower());
         }
     }
-
+     
     private void OnCollisionEnter2D(Collision2D other)
     {
         if(other.gameObject.tag == "Enemy")
@@ -73,6 +82,7 @@ public class PlayerController : MonoBehaviour
             else
             {
                 state = State.hurt;
+                HandleHealth();
                 if (other.gameObject.transform.position.x > transform.position.x)
                 {
                     rb.velocity = new Vector2(-hurtForce, rb.velocity.y);
@@ -82,11 +92,20 @@ public class PlayerController : MonoBehaviour
                     rb.velocity = new Vector2(hurtForce, rb.velocity.y);
                 }
             }
-            
+
         }
 
+        
     }
-
+    private void HandleHealth()
+        {
+            PermanentUI.perm.health -= 1;
+            PermanentUI.perm.healthAmount.text = PermanentUI.perm.health.ToString();
+            if (PermanentUI.perm.health <= 0)
+            {
+                SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+            }
+        }
 
     private void Movement()
     {
@@ -156,5 +175,12 @@ public class PlayerController : MonoBehaviour
     private void Footstep()
     {
         footstep.Play();
+    }
+
+    private IEnumerator ResetPower()
+    {
+        yield return new WaitForSeconds(10);
+        jumpForce = 35f;
+        GetComponent<SpriteRenderer>().color = Color.white;
     }
 }
